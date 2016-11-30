@@ -19,7 +19,7 @@ my ($graphiteSubsys, $graphiteBefore, $graphiteEscape, $graphiteRandomize);
 my ($graphiteDebug, $graphiteColInt, $graphiteCOFlag, $graphiteSendCount);
 my ($graphiteTTL, %graphiteTTL, %graphiteDataMin, %graphiteDataMax, %graphiteDataTot, %graphiteDataLast);
 my ($graphiteMyHost, $graphiteSocket, $graphiteSockHost, $graphiteSockPort, $graphiteSocketFailCount);
-my ($graphiteAlign, $graphiteFqdnFlag, graphiteReversedFqdnFlag, $graphiteMinFlag, $graphiteMaxFlag, $graphiteAvgFlag, $graphiteTotFlag, $graphiteFlags)=(0,0,0,0,0,0,0,0);
+my ($graphiteAlign, $graphiteFqdnFlag, $graphiteReversedFqdnFlag, $graphiteMinFlag, $graphiteMaxFlag, $graphiteAvgFlag, $graphiteTotFlag, $graphiteFlags)=(0,0,0,0,0,0,0,0);
 my $graphiteOutputFlag=1;
 
 # This sets a flag as soon as we 'require' the module and tells collectl this
@@ -52,7 +52,7 @@ sub graphiteInit
   foreach my $option (@_)
   {
     my ($name, $value)=split(/=/, $option);
-    error("invalid graphite option '$name'")    if $name!~/^[bdefhiprs]?$|^align|^co$|^ttl$|^min$|^max$|^avg$|^tot$/;
+    error("invalid graphite option '$name'")    if $name!~/^[bdefhiprsF]?$|^align|^co$|^ttl$|^min$|^max$|^avg$|^tot$/;
     $graphiteAlignFlag=1        if $name eq 'align';
     $graphiteBefore=$value      if $name eq 'b';
     $graphiteCOFlag=1           if $name eq 'co';
@@ -120,9 +120,9 @@ sub graphiteInit
 
   $graphiteMyHost=(!$graphiteFqdnFlag) ? `hostname` : `hostname -f`;
   if ($graphiteReversedFqdnFlag){
-    $graphiteMyHost = `hostname -f`;
-    chomp $graphiteMyHost;
-    my @components = reverse split(/./, $graphiteMyHost);
+    my $fqdn = `hostname -f`;
+    chomp $fqdn;
+    my @components = reverse split(/\./, $fqdn);
     $graphiteMyHost = join '.', @components;
   }
   chomp $graphiteMyHost;
