@@ -19,7 +19,7 @@ my ($graphiteSubsys, $graphiteBefore, $graphiteEscape, $graphiteRandomize);
 my ($graphiteDebug, $graphiteColInt, $graphiteCOFlag, $graphiteSendCount);
 my ($graphiteTTL, %graphiteTTL, %graphiteDataMin, %graphiteDataMax, %graphiteDataTot, %graphiteDataLast);
 my ($graphiteMyHost, $graphiteSocket, $graphiteSockHost, $graphiteSockPort, $graphiteSocketFailCount);
-my ($graphiteAlign, $graphiteFqdnFlag, $graphiteMinFlag, $graphiteMaxFlag, $graphiteAvgFlag, $graphiteTotFlag, $graphiteFlags)=(0,0,0,0,0,0,0);
+my ($graphiteAlign, $graphiteFqdnFlag, $graphiteReversedFqdnFlag, $graphiteMinFlag, $graphiteMaxFlag, $graphiteAvgFlag, $graphiteTotFlag, $graphiteFlags)=(0,0,0,0,0,0,0,0);
 my $graphiteOutputFlag=1;
 
 # This sets a flag as soon as we 'require' the module and tells collectl this
@@ -52,7 +52,7 @@ sub graphiteInit
   foreach my $option (@_)
   {
     my ($name, $value)=split(/=/, $option);
-    error("invalid graphite option '$name'")    if $name!~/^[bdefhiprs]?$|^align|^co$|^ttl$|^min$|^max$|^avg$|^tot$/;
+    error("invalid graphite option '$name'")    if $name!~/^[bdefhiprsF]?$|^align|^co$|^ttl$|^min$|^max$|^avg$|^tot$/;
     $graphiteAlignFlag=1        if $name eq 'align';
     $graphiteBefore=$value      if $name eq 'b';
     $graphiteCOFlag=1           if $name eq 'co';
@@ -63,7 +63,8 @@ sub graphiteInit
     $graphiteRandomize=$value   if $name eq 'r';
     $graphiteSubsys=$value      if $name eq 's';
     $graphiteTTL=$value         if $name eq 'ttl';
-    $graphiteFqdnFlag=1		if $name eq 'f';
+    $graphiteFqdnFlag=1         if $name eq 'f';
+    $graphiteReversedFqdnFlag=1 if $name eq 'F';
     $graphiteMinFlag=1          if $name eq 'min';
     $graphiteMaxFlag=1          if $name eq 'max';
     $graphiteAvgFlag=1          if $name eq 'avg';
@@ -118,6 +119,12 @@ sub graphiteInit
   $rawtooFlag=1    if $filename ne '' && !$plotFlag;
 
   $graphiteMyHost=(!$graphiteFqdnFlag) ? `hostname` : `hostname -f`;
+  if ($graphiteReversedFqdnFlag){
+    my $fqdn = `hostname -f`;
+    chomp $fqdn;
+    my @components = reverse split(/\./, $fqdn);
+    $graphiteMyHost = join '.', @components;
+  }
   chomp $graphiteMyHost;
   $graphiteMyHost =~ s/\./$graphiteEscape/g    if $graphiteEscape ne '';
 
@@ -580,6 +587,7 @@ usage: --export=graphite,host[:port][,options]
     d=mask      debugging options, see beginning of graphite.ph for details
     e=escape    escape character to replace '.' with in hostname
     f           use fqdn instead of simple hostname for statistics naming
+    F           use reversed fqdn for statistics naming. a.b.com becomes com.b.a
     h           print this help and exit
     i=seconds   reporting interval, must be multiple of collect's -i
     p=text      insert this text right after hostname, including '.' if you want one
